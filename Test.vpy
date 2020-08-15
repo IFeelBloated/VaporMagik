@@ -1,19 +1,18 @@
 from vapoursynth import *
 from VaporMagik import Injector
 
-def Pad(clip, left, right, top, bottom):
-    w = clip.width
-    h = clip.height
-    return clip.Resample(w+left+right, h+top+bottom, -left, -top, w+left+right, h+top+bottom, kernel="point")
+def Adjust(clip, intensity):
+    return clip.Expr(f"x {intensity} +")
 
 Injector.TargetType = VideoNode
 Injector['Transpose'] = core.std.Transpose
-Injector['Resample'] = core.fmtc.resample
-Injector['Pad'] = Pad
+Injector['Expr'] = core.std.Expr
+Injector['Adjust'] = Adjust
 Injector.TargetType = list
 Injector['StackHorizontal'] = core.std.StackHorizontal
+Injector['Expr'] = core.std.Expr
 
-clip = core.std.BlankClip()
-clip = clip.Transpose().Pad(1, 2, 3, 4)
-clip = [clip, clip].StackHorizontal()
+clip = core.std.BlankClip(format = GRAYS)
+clip = clip.Transpose().Adjust(0.8)
+clip = [clip, [clip, clip.Adjust(-0.4)].Expr("x y + 2 /")].StackHorizontal()
 clip.set_output()
