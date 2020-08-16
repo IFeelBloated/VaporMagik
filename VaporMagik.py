@@ -1,3 +1,4 @@
+from vapoursynth import *
 import ctypes
 
 class PyObject(ctypes.Structure):
@@ -31,3 +32,39 @@ class InjectorType:
         SetTypeAttribute(self.TargetType, Name, lambda this, *args, **kw: Attribute(this, *args, **kw))
 
 Injector = InjectorType()
+
+def AttachToVideo(Filter):
+    Injector.TargetType = VideoNode
+    Filter.VaporMagikTag = 'VideoNode -> ?'
+    Injector[Filter.__name__] = Filter
+    del Injector.TargetType
+    return Filter
+    
+def AttachToList(Filter):
+    Injector.TargetType = list
+    Filter.VaporMagikTag = '[] -> ?'
+    Injector[Filter.__name__] = Filter
+    del Injector.TargetType
+    return Filter
+
+def RegisterNativeFilter(Filter):
+    FilterName = Filter.name
+    ArgumentList = Filter.signature.replace(' ', '').split(';')
+    ArgumentList = [x for x in ArgumentList if x != '']
+    if len(ArgumentList) == 0:
+        return
+    SelfArgument = ArgumentList[0]
+    SelfArgumentType = SelfArgument.split(':')[1]
+    if '[]' in SelfArgumentType:
+        Injector.TargetType = list
+        Injector[FilterName] = Filter
+    if 'clip' in SelfArgumentType:
+        Injector.TargetType = VideoNode
+        Injector[FilterName] = Filter
+    if hasattr(Injector, 'TargetType'):
+        del Injector.TargetType
+        
+def RegisterPlugin(Instance):
+    FilterList = Instance.get_functions().keys()
+    for x in FilterList:
+        RegisterNativeFilter(getattr(Instance, x))
