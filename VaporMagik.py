@@ -4,7 +4,7 @@ class PyObject(ctypes.Structure):
     pass
 
 PyObject._fields_ = [
-    ('ob_refcnt', ctypes.c_int64),
+    ('ob_refcnt', ctypes.c_ssize_t),
     ('ob_type', ctypes.POINTER(PyObject)),
 ]
 
