@@ -3,11 +3,11 @@ from VaporMagik import *
 
 RegisterPlugin(core.std)
 
-@Hook(VideoNode)
+@Inject(VideoNode)
 def Adjust(clip, intensity):
     return clip.Expr(f"x {intensity} +")
 
-@Hook(list)
+@Inject(list)
 def Grayscale(channels):
     return channels.Expr("x 0.25 * y 0.5 * z 0.25 * + +")
 

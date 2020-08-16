@@ -26,21 +26,17 @@ def SetTypeAttribute(Type, Name, Attribute):
     AttributeDictionary = ExposeAttributeDictionary(Type)
     AttributeDictionary[Name] = Attribute
     ctypes.pythonapi.PyType_Modified(ctypes.py_object(Type))
-    
-class InjectorType:
-    def __setitem__(self, Name, Attribute):
-        SetTypeAttribute(self.TargetType, Name, lambda *args, **kw: Attribute(*args, **kw))
 
-def Hook(Type):
+def CallableToFunction(CallableObject):
+    return lambda *args, **kw: CallableObject(*args, **kw)
+    
+def Inject(Type):
     def Decorator(Filter):
-        Injector = InjectorType()
-        Injector.TargetType = Type
-        Injector[Filter.__name__] = Filter
+        SetTypeAttribute(Type, Filter.__name__, CallableToFunction(Filter))
         return Filter
     return Decorator
 
 def RegisterNativeFilter(Filter):
-    Injector = InjectorType()
     FilterName = Filter.name
     ArgumentList = Filter.signature.replace(' ', '').split(';')
     ArgumentList = [x for x in ArgumentList if x != '']
@@ -52,11 +48,9 @@ def RegisterNativeFilter(Filter):
     if SelfArgumentRequirement == 'opt':
         SetTypeAttribute(Core, FilterName, Filter)
     if '[]' in SelfArgumentType:
-        Injector.TargetType = list
-        Injector[FilterName] = Filter
+        SetTypeAttribute(list, FilterName, CallableToFunction(Filter))
     if 'clip' in SelfArgumentType:
-        Injector.TargetType = VideoNode
-        Injector[FilterName] = Filter
+        SetTypeAttribute(VideoNode, FilterName, CallableToFunction(Filter))
 
 def RegisterPlugin(Plugin):
     FilterList = Plugin.get_functions().keys()
