@@ -29,7 +29,7 @@ def SetTypeAttribute(Type, Name, Attribute):
     
 class InjectorType:
     def __setitem__(self, Name, Attribute):
-        SetTypeAttribute(self.TargetType, Name, lambda this, *args, **kw: Attribute(this, *args, **kw))
+        SetTypeAttribute(self.TargetType, Name, lambda *args, **kw: Attribute(*args, **kw))
 
 Injector = InjectorType()
 
