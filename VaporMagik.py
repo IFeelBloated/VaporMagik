@@ -1,4 +1,4 @@
-from vapoursynth import VideoNode, core, GRAY, RGB, YUV
+from vapoursynth import Core, VideoNode, core, GRAY, RGB, YUV
 import ctypes
 
 class PyObject(ctypes.Structure):
@@ -31,39 +31,33 @@ class InjectorType:
     def __setitem__(self, Name, Attribute):
         SetTypeAttribute(self.TargetType, Name, lambda *args, **kw: Attribute(*args, **kw))
 
-Injector = InjectorType()
-
-def AttachToVideo(Filter):
-    Injector.TargetType = VideoNode
-    Filter.VaporMagikTag = 'VideoNode -> ?'
-    Injector[Filter.__name__] = Filter
-    del Injector.TargetType
-    return Filter
-    
-def AttachToList(Filter):
-    Injector.TargetType = list
-    Filter.VaporMagikTag = '[] -> ?'
-    Injector[Filter.__name__] = Filter
-    del Injector.TargetType
-    return Filter
+def Hook(Type):
+    def Decorator(Filter):
+        Injector = InjectorType()
+        Injector.TargetType = Type
+        Injector[Filter.__name__] = Filter
+        return Filter
+    return Decorator
 
 def RegisterNativeFilter(Filter):
+    Injector = InjectorType()
     FilterName = Filter.name
     ArgumentList = Filter.signature.replace(' ', '').split(';')
     ArgumentList = [x for x in ArgumentList if x != '']
     if len(ArgumentList) == 0:
         return
-    SelfArgument = ArgumentList[0]
-    SelfArgumentType = SelfArgument.split(':')[1]
+    SelfArgument = ArgumentList[0].split(':')
+    SelfArgumentType = SelfArgument[1]
+    SelfArgumentRequirement = SelfArgument[2] if len(SelfArgument) > 2 else ''
+    if SelfArgumentRequirement == 'opt':
+        SetTypeAttribute(Core, FilterName, Filter)
     if '[]' in SelfArgumentType:
         Injector.TargetType = list
         Injector[FilterName] = Filter
     if 'clip' in SelfArgumentType:
         Injector.TargetType = VideoNode
         Injector[FilterName] = Filter
-    if hasattr(Injector, 'TargetType'):
-        del Injector.TargetType
-        
+
 def RegisterPlugin(Plugin):
     FilterList = Plugin.get_functions().keys()
     for x in FilterList:
