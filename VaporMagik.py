@@ -1,4 +1,4 @@
-from vapoursynth import *
+from vapoursynth import VideoNode, core, GRAY, RGB, YUV
 import ctypes
 
 class PyObject(ctypes.Structure):
@@ -64,7 +64,50 @@ def RegisterNativeFilter(Filter):
     if hasattr(Injector, 'TargetType'):
         del Injector.TargetType
         
-def RegisterPlugin(Instance):
-    FilterList = Instance.get_functions().keys()
+def RegisterPlugin(Plugin):
+    FilterList = Plugin.get_functions().keys()
     for x in FilterList:
-        RegisterNativeFilter(getattr(Instance, x))
+        RegisterNativeFilter(getattr(Plugin, x))
+
+@property
+def R(self):
+    if self.format.color_family != RGB:
+        raise AttributeError()
+    return core.std.ShufflePlanes(self, 0, GRAY)
+
+@property
+def G(self):
+    if self.format.color_family != RGB:
+        raise AttributeError()
+    return core.std.ShufflePlanes(self, 1, GRAY)
+
+@property
+def B(self):
+    if self.format.color_family != RGB:
+        raise AttributeError()
+    return core.std.ShufflePlanes(self, 2, GRAY)
+
+@property
+def Y(self):
+    if self.format.color_family != YUV:
+        raise AttributeError()
+    return core.std.ShufflePlanes(self, 0, GRAY)
+
+@property
+def Cb(self):
+    if self.format.color_family != YUV:
+        raise AttributeError()
+    return core.std.ShufflePlanes(self, 1, GRAY)
+
+@property
+def Cr(self):
+    if self.format.color_family != YUV:
+        raise AttributeError()
+    return core.std.ShufflePlanes(self, 2, GRAY)
+
+SetTypeAttribute(VideoNode, 'R', R)
+SetTypeAttribute(VideoNode, 'G', G)
+SetTypeAttribute(VideoNode, 'B', B)
+SetTypeAttribute(VideoNode, 'Y', Y)
+SetTypeAttribute(VideoNode, 'Cb', Cb)
+SetTypeAttribute(VideoNode, 'Cr', Cr)
