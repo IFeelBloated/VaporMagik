@@ -1,6 +1,7 @@
 from vapoursynth import VideoNode, core, GRAY, RGB, YUV
 import ctypes
 import builtins
+import inspect
 
 class PyObject(ctypes.Structure):
     pass
@@ -31,23 +32,33 @@ def SetTypeAttribute(Type, Name, Attribute):
 def CallableToFunction(CallableObject):
     return lambda *args, **kw: CallableObject(*args, **kw)
     
-def Inject(Type):
-    def Decorator(Filter):
-        SetTypeAttribute(Type, Filter.__name__, CallableToFunction(Filter))
-        return Filter
-    return Decorator
+def Inject(Filter):
+    ParameterDictionary = inspect.signature(Filter).parameters
+    ParameterNames = [Name for Name in ParameterDictionary]
+    Parameters = [ParameterDictionary[Name] for Name in ParameterNames]
+    if len(Parameters) == 0:
+        return
+    SelfParameter = Parameters[0]
+    if SelfParameter.annotation != inspect._empty:
+        SetTypeAttribute(SelfParameter.annotation, Filter.__name__, CallableToFunction(Filter))
+    else:
+        SetTypeAttribute(VideoNode, Filter.__name__, CallableToFunction(Filter))
+        SetTypeAttribute(list, Filter.__name__, CallableToFunction(Filter))
+        SetTypeAttribute(tuple, Filter.__name__, CallableToFunction(Filter))
+    return Filter
 
 def RegisterNativeFilter(Filter):
     FilterName = Filter.name
+    setattr(builtins, FilterName, Filter)
     ArgumentList = Filter.signature.replace(' ', '').split(';')
     ArgumentList = [x for x in ArgumentList if x != '']
     if len(ArgumentList) == 0:
         return
     SelfArgument = ArgumentList[0].split(':')
     SelfArgumentType = SelfArgument[1]
-    setattr(builtins, FilterName, Filter)
     if '[]' in SelfArgumentType:
         SetTypeAttribute(list, FilterName, CallableToFunction(Filter))
+        SetTypeAttribute(tuple, FilterName, CallableToFunction(Filter))
     if 'clip' in SelfArgumentType:
         SetTypeAttribute(VideoNode, FilterName, CallableToFunction(Filter))
 
