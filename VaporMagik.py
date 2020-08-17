@@ -1,5 +1,6 @@
-from vapoursynth import Core, VideoNode, core, GRAY, RGB, YUV
+from vapoursynth import VideoNode, core, GRAY, RGB, YUV
 import ctypes
+import builtins
 
 class PyObject(ctypes.Structure):
     pass
@@ -44,9 +45,7 @@ def RegisterNativeFilter(Filter):
         return
     SelfArgument = ArgumentList[0].split(':')
     SelfArgumentType = SelfArgument[1]
-    SelfArgumentRequirement = SelfArgument[2] if len(SelfArgument) > 2 else ''
-    if SelfArgumentRequirement == 'opt':
-        SetTypeAttribute(Core, FilterName, Filter)
+    setattr(builtins, FilterName, Filter)
     if '[]' in SelfArgumentType:
         SetTypeAttribute(list, FilterName, CallableToFunction(Filter))
     if 'clip' in SelfArgumentType:
