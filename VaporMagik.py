@@ -47,8 +47,8 @@ def Inject(Filter):
         SetTypeAttribute(tuple, Filter.__name__, CallableToFunction(Filter))
     return Filter
 
-def RegisterNativeFilter(Filter):
-    FilterName = Filter.name
+def RegisterNativeFilter(Filter, NamingPolicy = None):
+    FilterName = Filter.name if NamingPolicy is None else NamingPolicy(Filter.plugin.namespace, Filter.name)
     setattr(builtins, FilterName, Filter)
     ArgumentList = Filter.signature.replace(' ', '').split(';')
     ArgumentList = [x for x in ArgumentList if x != '']
@@ -62,10 +62,10 @@ def RegisterNativeFilter(Filter):
     if 'clip' in SelfArgumentType:
         SetTypeAttribute(VideoNode, FilterName, CallableToFunction(Filter))
 
-def RegisterPlugin(Plugin):
+def RegisterPlugin(Plugin, NamingPolicy = None):
     FilterList = Plugin.get_functions().keys()
     for x in FilterList:
-        RegisterNativeFilter(getattr(Plugin, x))
+        RegisterNativeFilter(getattr(Plugin, x), NamingPolicy)
 
 @property
 def R(self):
