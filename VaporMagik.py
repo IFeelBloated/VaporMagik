@@ -67,6 +67,14 @@ def RegisterPlugin(Plugin, NamingPolicy = None):
     for x in FilterList:
         RegisterNativeFilter(getattr(Plugin, x), NamingPolicy)
 
+def TraceFilePathOfTheRunningScript():
+    Frame = inspect.currentframe()
+    Callers = inspect.getouterframes(Frame)
+    del Frame
+    for x in Callers:
+        if x.filename.endswith('.vpy'):
+            return x.filename
+
 @property
 def R(self):
     if self.format.color_family != RGB:
