@@ -2,6 +2,7 @@ from vapoursynth import VideoNode, core, GRAY, RGB, YUV
 import ctypes
 import builtins
 import inspect
+import os
 
 class PyObject(ctypes.Structure):
     pass
@@ -73,7 +74,7 @@ def TraceFilePathOfTheRunningScript():
     del Frame
     for x in Callers:
         if x.filename.endswith('.vpy'):
-            return x.filename
+            return os.path.abspath(x.filename)
 
 @property
 def R(self):
